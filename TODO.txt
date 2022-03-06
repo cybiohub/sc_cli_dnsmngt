@@ -1,0 +1,16 @@
+# CYBIONET
+---
+
+Creation of local primary zone.
+Visualization of slave zones.
+
+Color on errors/success
+Put po/mo for languages support.
+
+- Add
+   interface=$(ip addr | grep 'state UP' | cut -d ':' -f 2 | sed 's/ //g' | head -n 1)
+   dnstop -l 3 $interface
+
+- Adjust option #8 (Primary and Secondary)
+
+- Detect signed areas.
