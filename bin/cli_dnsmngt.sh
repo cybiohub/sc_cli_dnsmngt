@@ -3,16 +3,27 @@
 # * **************************************************************************
 # * Creation:           (c) 2004-2022  Cybionet - Ugly Codes Division
 # *
-# * Author:		cli_dnsmngt.sh
-# * Version:		1.1.13
+# * File:               cli_dnsmngt.sh
+# * Version:            0.1.13
 # *
-# * Description:	Tool to configure DNS Zone.
+# * Comment:            Tool to configure DNS Zone.
 # *
-# * Creation: December 16, 2017
-# * Change:   January 19, 2022
+# * Date: December 16, 2017
+# * Modification: March 12, 2022
 # *
 # **************************************************************************
-# * chmod 500 cli_dnsmngt.sh
+#
+# LANG: vinZone
+#
+#  Creation de zone primaire locale.
+#  Visualisation des zones slaves.
+#  
+#  Couleur sur les erreurs/réussite
+#  Mettre po/mo pour les langues.
+#  
+# AJOUTER 
+# interface=$(ip addr | grep 'state UP' | cut -d ':' -f 2 | sed 's/ //g' | head -n 1)
+# dnstop -l 3 $interface
 # **************************************************************************
 
 # ## Cleaning the screen.
@@ -23,7 +34,7 @@ clear
 # ## CUSTOM VARIABLES
 
 # ## Server DNS slave.
-declare -r serverSlave=(192.168.0.10)
+declare -r serverSlave=(192.168.0.222)
 #declare -r serverSlave=(192.168.0.10 192.168.0.11)
 
 # ## Put here your favorite editor (editor, vim, nano, etc.). The default is the system-defined editor.
@@ -33,17 +44,18 @@ declare -r editor='editor'
 # ## Default path for files.
 declare -r zonePath='/var/chroot/bind/var/bind/pri'
 
-# ## Path for primary zone files.
+# ## Path for primary zone files. 
 declare -r zonePriPath='/var/chroot/bind/var/bind/pri'
 
-# ## Path for secondary zone files.
+# ## Path for secondary zone files. 
 declare -r zoneSecPath='/var/chroot/bind/var/bind/sec'
 
+# ## Files containing the zone.
 # ## Default file zone.
 declare -r declaredZones='named.pri.conf'
 
 # ## Primary file zone.
-declare -r declaredPriZones='"named.pri.conf'
+declare -r declaredPriZones='named.pri.conf'
 
 # ## Secondary file zone.
 declare -r declaredSecZones='named.sec.conf'
@@ -53,7 +65,7 @@ declare -r declaredSecZones='named.sec.conf'
 # ## VARIABLES
 
 # ## Actual version of this script.
-version='0.1.13'
+version='0.1.12ab'
 declare -r version
 
 # ## Actual date.
@@ -74,6 +86,7 @@ langFR() {
  msgInactZone='Zone inactive'
  msgInactZones='Zones inactives'
  msgNoInactZone='Aucune zone inactive'
+
 
  # ## syncZone
  txtMsg1='Recharger le fichier de configuration et des zones, puis transfer de toutes les zones esclaves depuis le serveur maître.'
@@ -96,11 +109,11 @@ langFR() {
  txtmnumsg7='Enter the domain name'
 
  # ## submenu
- txtmnumsg8='Modifier la zone:'
+ txtmnumsg8='Modifier la zone'
  txtmnumsg9='Afficher la date Epoch'
  txtmnumsg10='Vérifier le fichier de la zone'
- txtmnumsg11='Réplique cette zone vers le serveur esclave'
- txtmnumsg12='Voir/modifier la note'
+ txtmnumsg11='Replicate this zone to slave'
+ txtmnumsg12='Voir/Modifier la note'
  txtmnumsg13='Ajouter une note'
  txtmnumsg14='Retour au menu principal'
 
@@ -162,7 +175,7 @@ langEN() {
  txtmnumsg8='Edit the actual zone'
  txtmnumsg9='Show Epoch date'
  txtmnumsg10='Check zone file'
- txtmnumsg11='Replicate this zone to the slave server'
+ txtmnumsg11='Replicate this zone to slave'
  txtmnumsg12='View/Edit zone note'
  txtmnumsg13='Add zone note'
  txtmnumsg14='Return main menu'
@@ -391,7 +404,7 @@ function syncZone {
 function checkZone {
  header
  named-checkzone "${zoneName}" /var/chroot/bind/var/bind/pri/"${zoneName}".zone
- echo -e "\n$(whois "${zoneName}" | egrep -i 'Registration Expiration Date|Registry Expiry Date|Expiry date' | sed -e 's/^[ \t]*//' | awk -F 'T' '{print $1}')"
+ echo -e "\n$(whois "${zoneName}" | grep -E 'Registration Expiration Date|Registry Expiry Date|Expiry date' | sed -e 's/^[ \t]*//' | awk -F 'T' '{print $1}')"
  printf '%.s─' $(seq 1 65)
 }
 
@@ -453,9 +466,9 @@ function createZone {
 # ## EXPERIMENTAL - UNUSED.
 function showRawZone {
  if [ -n "${1}" ]; then
-  zonefile="${1}"
+  zoneFile="${1}"
 
-  named-checkzone -f raw -F text -o - "${zonefile}" "${zonePath}"/"${zonefile}"\.zone
+  named-checkzone -f raw -F text -o - "${zoneFile}" "${zonePath}"/"${zoneFile}"\.zone
  fi
 }
 
@@ -546,6 +559,8 @@ function submenu {
  echo -e "Q) ${msgQuit}"
  echo -n -e "\n${msgChoice}: "
  read -r subcase;
+
+# whois example.com | egrep -i 'Registration Expiration Date|Registry Expiry Date|Expiry date'
 
  case "${subcase}" in
         1)
