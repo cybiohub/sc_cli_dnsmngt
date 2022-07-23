@@ -65,7 +65,7 @@ declare -r declaredSecZones='named.sec.conf'
 # ## VARIABLES
 
 # ## Actual version of this script.
-version='0.1.12ab'
+version='0.1.13'
 declare -r version
 
 # ## Actual date.
