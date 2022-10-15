@@ -1,29 +1,16 @@
 #! /bin/bash
 #set -x
 # * **************************************************************************
-# * Creation:           (c) 2004-2022  Cybionet - Ugly Codes Division
+# * Author:           	(c) 2004-2022  Cybionet - Ugly Codes Division
 # *
 # * File:               cli_dnsmngt.sh
-# * Version:            0.1.13
+# * Version:            0.1.14
 # *
-# * Comment:            Tool to configure DNS Zone.
+# * Description:    	Tool to configure DNS Zone.
 # *
-# * Date: December 16, 2017
-# * Modification: March 12, 2022
+# * Creation: December 16, 2017
+# * Change:   October 14, 2022
 # *
-# **************************************************************************
-#
-# LANG: vinZone
-#
-#  Creation de zone primaire locale.
-#  Visualisation des zones slaves.
-#  
-#  Couleur sur les erreurs/réussite
-#  Mettre po/mo pour les langues.
-#  
-# AJOUTER 
-# interface=$(ip addr | grep 'state UP' | cut -d ':' -f 2 | sed 's/ //g' | head -n 1)
-# dnstop -l 3 $interface
 # **************************************************************************
 
 # ## Cleaning the screen.
@@ -33,9 +20,12 @@ clear
 #####################################################################
 # ## CUSTOM VARIABLES
 
+# ## This script is properly configured.
+declare -r isConfigured='false'
+
 # ## Server DNS slave.
-declare -r serverSlave=(192.168.0.222)
-#declare -r serverSlave=(192.168.0.10 192.168.0.11)
+declare -r serverSlave=(W.X.Y.Z)
+#declare -r serverSlave=(W.X.Y.Z A.B.C.D)
 
 # ## Put here your favorite editor (editor, vim, nano, etc.). The default is the system-defined editor.
 declare -r editor='editor'
@@ -65,7 +55,7 @@ declare -r declaredSecZones='named.sec.conf'
 # ## VARIABLES
 
 # ## Actual version of this script.
-version='0.1.13'
+version='0.1.14'
 declare -r version
 
 # ## Actual date.
@@ -86,7 +76,6 @@ langFR() {
  msgInactZone='Zone inactive'
  msgInactZones='Zones inactives'
  msgNoInactZone='Aucune zone inactive'
-
 
  # ## syncZone
  txtMsg1='Recharger le fichier de configuration et des zones, puis transfer de toutes les zones esclaves depuis le serveur maître.'
@@ -216,12 +205,32 @@ getLang()
 
 
 #####################################################################
+# ## VERSION
+
+# ## Only show the version and exit.
+if [ "${1}" == 'version' ]; then
+  echo "${version}"
+  exit 0
+fi
+
+
+# ############################################################################################
+# ## VERIFICATION
+
+# ## Check if the script is configured.
+if [ "${isConfigured}" == 'false' ] ; then
+  echo -n -e '\e[38;5;208mWARNING: Customize the settings to match your environment. Then set the "isConfigured" variable to "true".\n\e[0m'
+  exit 0
+fi
+
+
+#####################################################################
 # ## ARRAYS
 
-# Define the array.
-declare -a activeZones=($(cat /etc/bind/named.pri.conf | grep '^zone' | grep -v '#' | awk -F '["]' '{print $2}'))
-declare -a inactiveZones=($(cat /etc/bind/named.pri.conf | grep '#zone' | awk -F '["]' '{print $2}'))
-declare -a allZones=($(cat /etc/bind/named.pri.conf | grep '^zone\|#zone' | awk -F '["]' '{print $2}'))
+# ## Define the array.
+declare -a activeZones=($(cat /etc/bind/named.pri.conf | grep '^zone' | grep -v '#' | awk -F '["]' '{print $2}' | sort))
+declare -a inactiveZones=($(cat /etc/bind/named.pri.conf | grep '#zone' | awk -F '["]' '{print $2}' | sort))
+declare -a allZones=($(cat /etc/bind/named.pri.conf | grep '^zone\|#zone' | awk -F '["]' '{print $2}' | sort))
 
 
 #####################################################################
@@ -278,7 +287,6 @@ function showActiveZones {
    vacZone='zones'
  fi
 
-
  echo -e -n "${msgActive} ${vacZone}.\n"
  while [ "${i}" -lt "${aclen}" ]
   do
@@ -322,7 +330,6 @@ function showInactiveZones {
 
  menu
 }
-
 
 # ##
 function searchZone {
@@ -423,9 +430,9 @@ function countView {
  # ## Count number of view for DNS split brain.
  splitBrain=$(cat /etc/bind/named.options.conf | grep -c "^view")
  if [ "${splitBrain}" -gt 1 ]; then
-  echo -e "\e[31;1;208m\t${txtSplitDetect}\e[0m\n"
+   echo -e "\e[31;1;208m\t${txtSplitDetect}\e[0m\n"
  else
-  echo -e "\n"
+   echo -e "\n"
  fi
 }
 
@@ -466,9 +473,9 @@ function createZone {
 # ## EXPERIMENTAL - UNUSED.
 function showRawZone {
  if [ -n "${1}" ]; then
-  zoneFile="${1}"
+   zoneFile="${1}"
 
-  named-checkzone -f raw -F text -o - "${zoneFile}" "${zonePath}"/"${zoneFile}"\.zone
+   named-checkzone -f raw -F text -o - "${zoneFile}" "${zonePath}"/"${zoneFile}"\.zone
  fi
 }
 
@@ -476,18 +483,18 @@ function showRawZone {
 #####################################################################
 # ## MENU
 function menu {
-  echo -e "\n1) ${txtmnumsg1}"
-  echo "2) ${txtmnumsg2}"
-  echo "3) ${txtmnumsg3}"
-  echo "4) ${txtmnumsg4}"
-  echo "5) ${txtmnumsg5}"
-  echo "6) ${txtmnumsg6}"
-  printf '%.s─' $(seq 1 30)
-  echo -e "\nQ) ${msgQuit}"
-  echo -n -e "\n${msgChoice}: "
-  read -r case;
+ echo -e "\n1) ${txtmnumsg1}"
+ echo "2) ${txtmnumsg2}"
+ echo "3) ${txtmnumsg3}"
+ echo "4) ${txtmnumsg4}"
+ echo "5) ${txtmnumsg5}"
+ echo "6) ${txtmnumsg6}"
+ printf '%.s─' $(seq 1 30)
+ echo -e "\nQ) ${msgQuit}"
+ echo -n -e "\n${msgChoice}: "
+ read -r case;
 
-  case "${case}" in
+ case "${case}" in
         1)
             clear
             showAllZones
@@ -541,7 +548,7 @@ function menu {
            header
            menu
            ;;
-  esac
+ esac
 }
 
 function submenu {
@@ -680,22 +687,22 @@ function sysmenu {
 
 # ##
 function selectZoneType {
-  echo -e "\n1) ${txtmnumsg22}"
-  echo "2) ${txtmnumsg23}"
-  printf '%.s─' $(seq 1 30)
-  echo -e "\nQ) ${msgQuit}"
-  echo -n -e "\n${msgChoice}: "
-  read -r case;
+ echo -e "\n1) ${txtmnumsg22}"
+ echo "2) ${txtmnumsg23}"
+ printf '%.s─' $(seq 1 30)
+ echo -e "\nQ) ${msgQuit}"
+ echo -n -e "\n${msgChoice}: "
+ read -r case;
 
-  case "${case}" in
+ case "${case}" in
         1)
             clear
             declaredZones="${declaredPriZones}"
             zonePath="${zonePriPath}"
 
-            activeZones=($(cat /etc/bind/"${declaredZones}" | grep '^zone' | grep -v '#' | awk -F '["]' '{print $2}'))
-            inactiveZones=($(cat /etc/bind/"${declaredZones}" | grep '#zone' | awk -F '["]' '{print $2}'))
-            allZones=($(cat /etc/bind/"${declaredZones}" | grep '^zone\|#zone' | awk -F '["]' '{print $2}'))
+            activeZones=($(cat /etc/bind/"${declaredZones}" | grep '^zone' | grep -v '#' | awk -F '["]' '{print $2}' | sort))
+            inactiveZones=($(cat /etc/bind/"${declaredZones}" | grep '#zone' | awk -F '["]' '{print $2}' | sort))
+            allZones=($(cat /etc/bind/"${declaredZones}" | grep '^zone\|#zone' | awk -F '["]' '{print $2}' | sort))
             header
             menu
             ;;
@@ -704,9 +711,9 @@ function selectZoneType {
             declaredZones="${declaredSecZones}"
             zonePath="${zoneSecPath}"
 
-            activeZones=($(cat /etc/bind/"${declaredZones}" | grep '^zone' | grep -v '#' | awk -F '["]' '{print $2}'))
-            inactiveZones=($(cat /etc/bind/"${declaredZones}" | grep '#zone' | awk -F '["]' '{print $2}'))
-            allZones=($(cat /etc/bind/"${declaredZones}" | grep '^zone\|#zone' | awk -F '["]' '{print $2}'))
+            activeZones=($(cat /etc/bind/"${declaredZones}" | grep '^zone' | grep -v '#' | awk -F '["]' '{print $2}' | sort))
+            inactiveZones=($(cat /etc/bind/"${declaredZones}" | grep '#zone' | awk -F '["]' '{print $2}' | sort))
+            allZones=($(cat /etc/bind/"${declaredZones}" | grep '^zone\|#zone' | awk -F '["]' '{print $2}' | sort))
             header
             menu
             ;;
@@ -718,7 +725,7 @@ function selectZoneType {
            clear
            menu
            ;;
-  esac
+ esac
 }
 
 
